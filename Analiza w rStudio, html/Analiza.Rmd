@@ -1,0 +1,276 @@
+---
+title: "Analiza wydatków na swieze owoce we Wloszech"
+author: "Karina Waligora i Paulina Korzeniowska"
+date: "27 01 2021"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+library(dplyr)
+library(knitr)
+library(ggplot2)
+dane <- read.delim("HBS_Microdati_Anno_2011.txt", header = TRUE, sep = "\t", dec = ".")
+```
+# **Wstep**
+
+Nasz projekt przygotowalysmy w oparciu o dane obejmujace dane jednostkowe badania budzetu gospodarstw domowych we Wloszech w 2011 roku. 
+Wybralysmy interesujace nas dane zwiazane z analiza wydatkow na swieze owoce przez Wlochow. Chcemy przeanalizowac czynniki jakie maja wplyw na wydatki na poszczegolne rodzaje owocow i w tym celu bedziemy wykonywac odpowiednie badania i prezentacje graficzne danych.
+
+
+Chcemy skupic sie na zgadanieniach takich jak:
+
+1.
+2.
+3.
+4.
+5.
+
+
+# **Obrobka danych**
+## Nadajemy nazwy odpowiednim obiektom
+```{r, echo=T}
+owoce <- select(dane,Mese,Regione,TIPFAM,NC,Eta4_1, Sesso1,C_1601,C_1602,C_1603,C_1604,C_1605,C_1606,C_1607, owoce_cytrusowe = C_1601, Banany=C_1602, Jablka=C_1603, Gruszki=C_1604, Owoce_z_pestka=C_1605, Winogronatrusk=C_1606, inne=C_1607, miesiac=Mese, Region = Regione, typ_rodziny= TIPFAM, liczbaos=NC, Wiek = Eta4_1, Plec = Sesso1)
+```
+
+### Usuniecie pustych danych
+
+```{r, echo=T}
+colSums(is.na(owoce))
+owoce <- na.omit(owoce)
+```
+
+### Dodanie kolumny z suma wydatkow na owoce
+
+```{r, echo=T}
+owoce <- owoce %>%
+  mutate(owoce, Wydatki_owoce = owoce_cytrusowe + Banany + Jablka + Gruszki + Owoce_z_pestka + Winogronatrusk + inne)
+```
+
+# Interpretacja danych:
+
+- owoce_cytrusowe - wydatki na owoce cytrusowe
+
+- Banany - wydatki na banany
+
+- Jablka - wydatki na jablka
+
+- Gruszki - wydatki na gruszki
+
+- Owoce_z_pestka - wydatki na owoce z pestka
+
+- Winogronatrusk - wydatki na winogrona i truskawki
+
+- inne - wydatki na inne swieze owoce
+
+- miesiac - miesiac badania
+
+- Region - region zamieszkania
+
+- typ_rodziny - typ rodziny
+
+- liczbaos - liczba osob w gospodaarstwie domowym
+
+- Wiek - wiek osoby ankietowanej
+
+- Plec - plec osoby ankietowanej
+
+## Dotychczasowa prezentacja danych
+```{r}
+kable(head(owoce, 5), format="markdown", align = 'c')
+```
+
+
+## Usuwanie danych ostajacych
+### Histogramy
+```{r}
+
+owoce %>%
+  filter(owoce_cytrusowe > 0) %>%
+    ggplot()+
+    geom_histogram(aes(owoce_cytrusowe), binwidth = 10, center = 5, color="black", fill="pink") + 
+    labs(x="Wydatki na owoce cytrusowe", y = "Licznosc") +
+    theme_classic()
+
+
+owoce %>%
+  filter(Jablka > 0) %>%
+    ggplot()+
+    geom_histogram(aes(Jablka), binwidth = 10, center = 5, color="black", fill="pink") + 
+    labs(x="Wydatki na Jablka", y = "Licznosc") +
+    theme_classic()
+
+owoce %>%
+  filter(Gruszki > 0) %>%
+    ggplot()+
+    geom_histogram(aes(Gruszki), binwidth = 10, center = 5, color="black", fill="pink") + 
+    labs(x="Wydatki na Gruszki", y = "Licznosc") +
+    theme_classic()
+
+
+owoce %>%
+  filter(Banany > 0) %>%
+    ggplot()+
+    geom_histogram(aes(Banany), binwidth = 10, center = 5, color="black", fill="pink") + 
+    labs(x="Wydatki na Banany", y = "Licznosc") +
+    theme_classic()
+
+
+owoce %>%
+  filter(Owoce_z_pestka > 0) %>%
+    ggplot()+
+    geom_histogram(aes(Owoce_z_pestka), binwidth = 10, center = 5, color="black", fill="pink") + 
+    labs(x="Wydatki na Owoce z pestka", y = "Licznosc") +
+    theme_classic()
+
+owoce %>%
+  filter(inne > 0) %>%
+    ggplot()+
+    geom_histogram(aes(inne), binwidth = 10, center = 5, color="black", fill="pink") + 
+    labs(x="Wydatki na inne swieze owoce", y = "Licznosc") +
+    theme_classic()
+
+
+owoce %>%
+  filter(Winogronatrusk > 0) %>%
+    ggplot()+
+    geom_histogram(aes(Winogronatrusk), binwidth = 10, center = 5, color="black", fill="pink") + 
+    labs(x="Wydatki na Wingorona i Truskawki", y = "Licznosc") +
+    theme_classic()
+
+```
+
+
+## Usuwanie danych odstajacych
+**Ograniczam dane bazujac na histogramach**
+```{r , echo=T }
+owocef <- owoce %>%
+  filter(owoce_cytrusowe < 90 ,
+         Jablka <65 ,
+         Banany <60,
+         Gruszki < 50 ,
+         Owoce_z_pestka < 90,
+         Winogronatrusk <75,
+         inne < 90,
+          )
+```
+
+## Przeksztalcanie danych Region, Miesiac, Plec,Wiek, typ_rodziny
+
+```{r}
+owocef$Region[owocef$Region == 1] <- "polnoc"
+owocef$Region[owocef$Region == 2] <- "polnoc"
+owocef$Region[owocef$Region == 3] <- "polnoc"
+owocef$Region[owocef$Region == 4] <- "polnoc"
+owocef$Region[owocef$Region == 5] <- "polnoc"
+owocef$Region[owocef$Region == 6] <- "polnoc"
+owocef$Region[owocef$Region == 7] <- "polnoc"
+owocef$Region[owocef$Region == 8] <- "polnoc"
+owocef$Region[owocef$Region == 9] <- "centrum"
+owocef$Region[owocef$Region == 10] <- "centrum"
+owocef$Region[owocef$Region == 11] <- "centrum"
+owocef$Region[owocef$Region == 12] <- "centrum"
+owocef$Region[owocef$Region == 13] <- "centrum"
+owocef$Region[owocef$Region == 14] <- "centrum"
+owocef$Region[owocef$Region == 15] <- "poludnie"
+owocef$Region[owocef$Region == 16] <- "poludnie"
+owocef$Region[owocef$Region == 17] <- "poludnie"
+owocef$Region[owocef$Region == 18] <- "poludnie"
+owocef$Region[owocef$Region == 19] <- "poludnie"
+owocef$Region[owocef$Region == 20] <- "poludnie"
+
+
+owocef$miesiac[owocef$miesiac == 1] <- "styczen"
+owocef$miesiac[owocef$miesiac == 2] <- "luty"
+owocef$miesiac[owocef$miesiac == 3] <- "marzec"
+owocef$miesiac[owocef$miesiac == 4] <- "kwiecien"
+owocef$miesiac[owocef$miesiac == 5] <- "maj"
+owocef$miesiac[owocef$miesiac == 6] <- "czerwiec"
+owocef$miesiac[owocef$miesiac == 7] <- "lipiec"
+owocef$miesiac[owocef$miesiac == 8] <- "sierpien"
+owocef$miesiac[owocef$miesiac == 9] <- "wrzesien"
+owocef$miesiac[owocef$miesiac == 10] <- "pazdziernik"
+owocef$miesiac[owocef$miesiac == 11] <- "listopad"
+owocef$miesiac[owocef$miesiac == 12] <- "grudzien"
+
+owocef$Plec[owocef$Plec == 1] <- "M"  
+owocef$Plec[owocef$Plec == 2] <- "K"
+
+owocef$Wiek[owocef$Wiek == 2] <- "mloda_dorosla"
+owocef$Wiek[owocef$Wiek == 3] <- "dorosla"
+owocef$Wiek[owocef$Wiek == 4] <- "starsza"
+
+owocef$typ_rodziny[owocef$typ_rodziny == 1] <- "samotna"
+owocef$typ_rodziny[owocef$typ_rodziny == 2] <- "samotna"
+owocef$typ_rodziny[owocef$typ_rodziny == 3] <- "samotna"
+owocef$typ_rodziny[owocef$typ_rodziny == 4] <- "para_bez_dzieci"
+owocef$typ_rodziny[owocef$typ_rodziny == 5] <- "para_bez_dzieci"
+owocef$typ_rodziny[owocef$typ_rodziny == 6] <- "para_bez_dzieci"
+owocef$typ_rodziny[owocef$typ_rodziny == 7] <- "para_z_dziecmi"
+owocef$typ_rodziny[owocef$typ_rodziny == 8] <- "para_z_dziecmi"
+owocef$typ_rodziny[owocef$typ_rodziny == 9] <- "para_z_dziecmi"
+owocef$typ_rodziny[owocef$typ_rodziny == 10] <- "samotny_rodzic"
+owocef$typ_rodziny[owocef$typ_rodziny ==11] <- "inne"
+
+
+
+owocef$miesiac <- as.factor(owocef$miesiac)
+owocef$Region <- as.factor(owocef$Region)
+owocef$Wiek <- as.factor(owocef$Wiek)
+owocef$Plec <- as.factor(owocef$Plec)
+owocef$typ_rodziny <- as.factor(owocef$typ_rodziny)
+```
+
+***Ostateczne dane***
+```{r}
+kable(head(owocef, 10), format="markdown", align = 'c')
+```
+
+*ostateczna baza danych, na ktorej bedziemy pracowac - owocef*
+
+# **Analiza**
+
+**Statystyki opisowe zmiennych ilosciowych**
+
+```{r}
+summary(owocef[,c(7,8,9,10,11,12,13,14)])
+```
+
+```{r}
+owocef %>%
+  group_by(miesiac) %>%
+  summarise(srednia = mean(owoce_cytrusowe))%>%
+  ggplot(aes(x = "", y = srednia, fill = reorder(miesiac,srednia))) +
+    geom_bar(stat = "identity", width = 1, color = "white") +
+      coord_polar("y", start = 0) +
+        theme_void() + 
+          labs(title = "Srednia ilosc wydatkow na owoce cytrusowe w poszczegolnych miesiacach roku",
+               fill = "Miesiac",
+               tag = "Rysunek 1")
+```
+
+
+**Wnioski: **
+Na tej podstawie mozemy stwerdzic, ze srednia ilosc wydatkow na owoce cytrusowe byla najwieksza w styczniu, lutym, marcu i grudniu a najmniejsza w sierpniu, lipcu i wrzesniu.
+            
+
+**Ile srednio kobiety i miezczyzni zakupili owocow cytrusowych?**
+```{r, echo=T }
+owocef %>%
+  group_by(Plec, owoce_cytrusowe) %>%
+  summarise(Ilosc = mean(owoce_cytrusowe)) %>%
+  ggplot() +
+  geom_col(aes(Plec, Ilosc, fill=owoce_cytrusowe), alpha = 0.6, position = position_dodge(width=0.2)) + 
+  theme_classic()
+
+
+
+
+```
+
+**Wnioski: **
+Na tej podstawie mozemy stwerdzic, ze srednia zakupu owocow cytrusowych przez kobiety i mezczyzn jest taka sama
+
